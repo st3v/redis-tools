@@ -47,6 +47,34 @@ var _ = Describe("redis", func() {
 				})
 			})
 		})
+
+		Describe(".lookupAlias", func() {
+			var redisClient *client
+
+			BeforeEach(func() {
+				redisClient = newClient(nil)
+			})
+
+			Context("when alias exists", func() {
+				BeforeEach(func() {
+					CommandAlias("cmd", "alias")(redisClient)
+				})
+
+				It("returns the alias", func() {
+					Expect(redisClient.lookupAlias("CMD")).To(Equal("alias"))
+				})
+
+				It("is not case-sensitive", func() {
+					Expect(redisClient.lookupAlias("cMd")).To(Equal("alias"))
+				})
+			})
+
+			Context("when the alias does not exists", func() {
+				It("returns the command itself", func() {
+					Expect(redisClient.lookupAlias("cmd")).To(Equal("cmd"))
+				})
+			})
+		})
 	})
 
 })

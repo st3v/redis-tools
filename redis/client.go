@@ -1,6 +1,10 @@
 package redis
 
-import redigo "github.com/garyburd/redigo/redis"
+import (
+	"strings"
+
+	redigo "github.com/garyburd/redigo/redis"
+)
 
 type Client interface {
 	Snapshot(doneChan chan struct{}, errChan chan error)
@@ -8,8 +12,16 @@ type Client interface {
 }
 
 type client struct {
-	conn redigo.Conn
-	auth string
+	conn    redigo.Conn
+	auth    string
+	aliases map[string]string
+}
+
+func newClient(conn redigo.Conn) *client {
+	return &client{
+		conn:    conn,
+		aliases: map[string]string{},
+	}
 }
 
 func (c *client) authenticate() error {
@@ -20,6 +32,14 @@ func (c *client) authenticate() error {
 	}
 
 	return err
+}
+
+func (c *client) lookupAlias(cmd string) string {
+	alias, found := c.aliases[strings.ToUpper(cmd)]
+	if !found {
+		return cmd
+	}
+	return alias
 }
 
 func (c *client) Close() error {

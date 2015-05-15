@@ -2,6 +2,7 @@ package redis
 
 import (
 	"fmt"
+	"strings"
 
 	redigo "github.com/garyburd/redigo/redis"
 
@@ -12,21 +13,13 @@ var dialer = redigo.Dial
 
 type option func(*client)
 
-func Password(password string) option {
-	return func(c *client) {
-		c.auth = password
-	}
-}
-
 func Connect(host string, port int, options ...option) (Client, error) {
 	conn, err := dialer("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		return nil, tracerr.Wrap(err)
 	}
 
-	client := &client{
-		conn: conn,
-	}
+	client := newClient(conn)
 
 	for _, option := range options {
 		option(client)
@@ -39,4 +32,16 @@ func Connect(host string, port int, options ...option) (Client, error) {
 	}
 
 	return client, nil
+}
+
+func Password(password string) option {
+	return func(c *client) {
+		c.auth = password
+	}
+}
+
+func CommandAlias(cmd, alias string) option {
+	return func(c *client) {
+		c.aliases[strings.ToUpper(cmd)] = alias
+	}
 }
